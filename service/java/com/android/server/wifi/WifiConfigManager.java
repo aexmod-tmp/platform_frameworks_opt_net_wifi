@@ -960,6 +960,8 @@ public class WifiConfigManager {
             }
         }
 
+        internalConfig.shareThisAp = externalConfig.shareThisAp;
+
         // Copy over the |WifiEnterpriseConfig| parameters if set.
         if (externalConfig.enterpriseConfig != null) {
             internalConfig.enterpriseConfig.copyFromExternal(
@@ -972,6 +974,20 @@ public class WifiConfigManager {
 
         // Copy over macRandomizationSetting
         internalConfig.macRandomizationSetting = externalConfig.macRandomizationSetting;
+
+        // Copy over the DPP configuration parameters if set.
+        if (externalConfig.dppConnector != null) {
+            internalConfig.dppConnector = externalConfig.dppConnector;
+        }
+        if (externalConfig.dppNetAccessKey != null) {
+            internalConfig.dppNetAccessKey = externalConfig.dppNetAccessKey;
+        }
+        if (externalConfig.dppNetAccessKeyExpiry >= 0) {
+            internalConfig.dppNetAccessKeyExpiry = externalConfig.dppNetAccessKeyExpiry;
+        }
+        if (externalConfig.dppCsign != null) {
+            internalConfig.dppCsign = externalConfig.dppCsign;
+        }
     }
 
     /**
@@ -992,12 +1008,18 @@ public class WifiConfigManager {
         configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
 
         configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.GCMP_256);
         configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
 
         configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.GCMP_256);
         configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
         configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
         configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
+
+        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupMgmtCipher.BIP_CMAC_256);
+
+        configuration.allowedSuiteBCiphers.set(WifiConfiguration.SuiteBCipher.ECDHE_ECDSA);
 
         configuration.setIpAssignment(IpConfiguration.IpAssignment.DHCP);
         configuration.setProxySettings(IpConfiguration.ProxySettings.NONE);
@@ -2229,6 +2251,16 @@ public class WifiConfigManager {
             if (mVerboseLoggingEnabled) {
                 Log.v(TAG, "getSavedNetworkFromScanDetail Found " + config.configKey()
                         + " for " + scanResult.SSID + "[" + scanResult.capabilities + "]");
+            }
+            if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.IEEE8021X)) {
+                if (scanResult.capabilities.contains("FILS-SHA256"))
+                   config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.FILS_SHA256);
+                else
+                   config.allowedKeyManagement.clear(WifiConfiguration.KeyMgmt.FILS_SHA256);
+                if (scanResult.capabilities.contains("FILS-SHA384"))
+                   config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.FILS_SHA384);
+                else
+                   config.allowedKeyManagement.clear(WifiConfiguration.KeyMgmt.FILS_SHA384);
             }
         }
         return config;

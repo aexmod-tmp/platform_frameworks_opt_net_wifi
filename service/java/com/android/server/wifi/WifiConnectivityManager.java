@@ -32,6 +32,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.DeviceMobilityState;
 import android.net.wifi.WifiScanner;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.WifiScanner.PnoSettings;
 import android.net.wifi.WifiScanner.ScanSettings;
 import android.os.Handler;
@@ -156,6 +157,7 @@ public class WifiConnectivityManager {
     private WifiScanner mScanner;
 
     private boolean mDbg = false;
+    private boolean DBG = false;
     private boolean mWifiEnabled = false;
     private boolean mWifiConnectivityManagerEnabled = false;
     private boolean mRunning = false;
@@ -176,7 +178,7 @@ public class WifiConnectivityManager {
     // Device configs
     private boolean mEnableAutoJoinWhenAssociated;
     private boolean mWaitForFullBandScanResults = false;
-    private boolean mUseSingleRadioChainScanResults = false;
+    private boolean mUseSingleRadioChainScanResults = true;
     private int mFullScanMaxTxRate;
     private int mFullScanMaxRxRate;
 
@@ -211,6 +213,19 @@ public class WifiConnectivityManager {
     // be retrieved in bugreport.
     private void localLog(String log) {
         mLocalLog.log(log);
+        if (DBG)
+            Log.d(TAG, log);
+    }
+
+    /**
+     * Enable verbose logging for WifiCountryCode.
+     */
+    public void enableVerboseLogging(int verbose) {
+        if (verbose > 0) {
+            DBG = true;
+        } else {
+            DBG = false;
+        }
     }
 
     // A periodic/PNO scan will be rescheduled up to MAX_SCAN_RESTART_ALLOWED times

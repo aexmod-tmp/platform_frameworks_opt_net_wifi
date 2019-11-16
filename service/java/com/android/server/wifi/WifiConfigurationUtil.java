@@ -58,7 +58,8 @@ public class WifiConfigurationUtil {
      */
     private static final int ENCLOSING_QUOTES_LEN = 2;
     private static final int SSID_UTF_8_MIN_LEN = 1 + ENCLOSING_QUOTES_LEN;
-    private static final int SSID_UTF_8_MAX_LEN = 32 + ENCLOSING_QUOTES_LEN;
+    private static final int SSID_UTF_8_MAX_LEN = // wifigbk++
+                        WifiGbk.MAX_SSID_UTF_LENGTH + ENCLOSING_QUOTES_LEN;
     private static final int SSID_HEX_MIN_LEN = 2;
     private static final int SSID_HEX_MAX_LEN = 64;
     private static final int PSK_ASCII_MIN_LEN = 8 + ENCLOSING_QUOTES_LEN;
@@ -170,6 +171,14 @@ public class WifiConfigurationUtil {
                 || isConfigForEapSuiteBNetwork(config)));
     }
 
+    public static boolean isConfigForSha256Network(WifiConfiguration config) {
+        return config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.FILS_SHA256);
+    }
+
+    public static boolean isConfigForSha384Network(WifiConfiguration config) {
+        return config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.FILS_SHA384);
+    }
+
     /**
      * Compare existing and new WifiConfiguration objects after a network update and return if
      * IP parameters have changed or not.
@@ -246,6 +255,9 @@ public class WifiConfigurationUtil {
                     != newEnterpriseConfig.getPhase2Method()) {
                 return true;
             }
+            if (getEapSimNum(existingEnterpriseConfig) != getEapSimNum(newEnterpriseConfig)){
+                return true;
+            }
             if (!TextUtils.equals(existingEnterpriseConfig.getIdentity(),
                                   newEnterpriseConfig.getIdentity())) {
                 return true;
@@ -271,6 +283,15 @@ public class WifiConfigurationUtil {
             }
         }
         return false;
+    }
+
+    public static int getEapSimNum(WifiEnterpriseConfig enterpriseConfig){
+        int mSimNum =0;
+        if (enterpriseConfig.getSimNum() != null
+                             && !enterpriseConfig.getSimNum().isEmpty()) {
+            mSimNum = Integer.parseInt(enterpriseConfig.getSimNum());
+        }
+        return mSimNum;
     }
 
     /**
@@ -514,8 +535,8 @@ public class WifiConfigurationUtil {
 
     private static boolean validateKeyMgmt(BitSet keyMgmnt) {
         if (keyMgmnt.cardinality() > 1) {
-            if (keyMgmnt.cardinality() > 3) {
-                Log.e(TAG, "validateKeyMgmt failed: cardinality > 3");
+            if (keyMgmnt.cardinality() > 4) {
+                Log.e(TAG, "validateKeyMgmt failed: cardinality > 4");
                 return false;
             }
             if (!keyMgmnt.get(WifiConfiguration.KeyMgmt.WPA_EAP)) {
@@ -528,8 +549,10 @@ public class WifiConfigurationUtil {
                 return false;
             }
             if (keyMgmnt.cardinality() == 3
-                    && !keyMgmnt.get(WifiConfiguration.KeyMgmt.SUITE_B_192)) {
-                Log.e(TAG, "validateKeyMgmt failed: not SUITE_B_192");
+                    && (!keyMgmnt.get(WifiConfiguration.KeyMgmt.SUITE_B_192) &&
+                        !keyMgmnt.get(WifiConfiguration.KeyMgmt.FILS_SHA256) &&
+                        !keyMgmnt.get(WifiConfiguration.KeyMgmt.FILS_SHA384))) {
+                Log.e(TAG, "validateKeyMgmt failed: not SUITE_B_192 or FILS");
                 return false;
             }
         }

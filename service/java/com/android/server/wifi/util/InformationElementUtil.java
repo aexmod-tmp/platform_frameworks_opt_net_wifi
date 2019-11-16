@@ -416,6 +416,9 @@ public class InformationElementUtil {
         private static final int RSN_AKM_FT_SAE = 0x09ac0f00;
         private static final int RSN_AKM_OWE = 0x12ac0f00;
         private static final int RSN_AKM_EAP_SUITE_B_192 = 0x0cac0f00;
+        private static final int WPA2_AKM_FILS_SHA256 = 0x0eac0f00;
+        private static final int WPA2_AKM_FILS_SHA384 = 0x0fac0f00;
+        private static final int WPA2_AKM_DPP = 0x029a6f50;
 
         private static final int WPA_CIPHER_NONE = 0x00f25000;
         private static final int WPA_CIPHER_TKIP = 0x02f25000;
@@ -434,6 +437,12 @@ public class InformationElementUtil {
         public boolean isESS;
         public boolean isPrivacy;
         public boolean isWPS;
+        public boolean isHt;
+        public boolean isVht;
+        public boolean isHe;
+        public boolean reportHt;
+        public boolean reportVht;
+        public boolean reportHe;
 
         public Capabilities() {
         }
@@ -502,6 +511,15 @@ public class InformationElementUtil {
                         case RSN_AKM_PSK_SHA256:
                             rsnKeyManagement.add(ScanResult.KEY_MGMT_PSK_SHA256);
                             break;
+                        case WPA2_AKM_FILS_SHA256:
+                            rsnKeyManagement.add(ScanResult.KEY_MGMT_FILS_SHA256);
+                            break;
+                        case WPA2_AKM_FILS_SHA384:
+                            rsnKeyManagement.add(ScanResult.KEY_MGMT_FILS_SHA384);
+                            break;
+                        case WPA2_AKM_DPP:
+                            rsnKeyManagement.add(ScanResult.KEY_MGMT_DPP);
+                            break;
                         case RSN_AKM_SAE:
                             rsnKeyManagement.add(ScanResult.KEY_MGMT_SAE);
                             break;
@@ -512,6 +530,7 @@ public class InformationElementUtil {
                             rsnKeyManagement.add(ScanResult.KEY_MGMT_OWE);
                             break;
                         case RSN_AKM_EAP_SUITE_B_192:
+                            Log.e("informationelement", "captured suite b" );
                             rsnKeyManagement.add(ScanResult.KEY_MGMT_EAP_SUITE_B_192);
                             break;
                         default:
@@ -717,6 +736,16 @@ public class InformationElementUtil {
                         keyManagement.add(oweKeyManagement);
                     }
                 }
+
+                if (ie.id == InformationElement.EID_HT_CAPABILITIES) {
+                    isHt = true;
+                } else if (ie.id == InformationElement.EID_VHT_CAPABILITIES) {
+                    isVht = true;
+                } else if (ie.id == InformationElement.EID_EXTENSION &&
+                      ie.bytes != null && ie.bytes.length > 0 &&
+                      ((ie.bytes[0] & 0xFF) == InformationElement.EID_EXT_HE_CAPABILITIES)) {
+                    isHe = true;
+                }
             }
         }
 
@@ -770,6 +799,12 @@ public class InformationElementUtil {
                     return "FT/SAE";
                 case ScanResult.KEY_MGMT_EAP_SUITE_B_192:
                     return "EAP_SUITE_B_192";
+                case ScanResult.KEY_MGMT_DPP:
+                    return "DPP";
+                case ScanResult.KEY_MGMT_FILS_SHA256:
+                    return "FILS-SHA256";
+                case ScanResult.KEY_MGMT_FILS_SHA384:
+                    return "FILS-SHA384";
                 default:
                     return "?";
             }
@@ -816,6 +851,15 @@ public class InformationElementUtil {
             }
             if (isWPS) {
                 capabilities.append("[WPS]");
+            }
+            if (reportHt && isHt) {
+                capabilities.append("[WFA-HT]");
+            }
+            if (reportVht && isVht) {
+                capabilities.append("[WFA-VHT]");
+            }
+            if (reportHe && isHe) {
+                capabilities.append("[WFA-HE]");
             }
 
             return capabilities.toString();
